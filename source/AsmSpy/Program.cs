@@ -12,6 +12,7 @@ namespace AsmSpy
             var options = GetOptions(args);
             var spy = new AsmSpy(options.All, options.Path, options.SkipSystem, options.SubDirectories, Console.Out);
             spy.Analyse();
+            spy.PrintResults();
 
             if(Debugger.IsAttached)
                 Debugger.Break();

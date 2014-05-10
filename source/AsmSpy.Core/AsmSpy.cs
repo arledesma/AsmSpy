@@ -16,6 +16,7 @@ namespace AsmSpy
         private readonly bool _skipSystem;
         private readonly bool _subDirectories;
         private readonly ConcurrentDictionary<string, IList<ReferencedAssembly>> _assemblies = new ConcurrentDictionary<string, IList<ReferencedAssembly>>();
+        private readonly IList<AssemblyResult> _assemblyResults = new List<AssemblyResult>();
         private readonly TextWriter _writer;
 
         public AsmSpy(bool all, string path, bool skipSystem, bool subDirectories)
@@ -36,11 +37,11 @@ namespace AsmSpy
             _writer = writer;
         }
 
-        public void Analyse()
+        public IList<AssemblyResult> Analyse()
         {
             var directoryInfo = GetDirectoryInfo();
             var assemblyFiles = GetFiles(directoryInfo);
-            AnalyseAssemblies(assemblyFiles);
+            return AnalyseAssemblies(assemblyFiles);
         }
 
         private List<FileInfo> GetFiles(DirectoryInfo directoryInfo)
@@ -71,7 +72,7 @@ namespace AsmSpy
             throw new FileNotFoundException();
         }
 
-        public void AnalyseAssemblies(List<FileInfo> assemblyFiles)
+        public IList<AssemblyResult> AnalyseAssemblies(List<FileInfo> assemblyFiles)
         {
             Parallel.ForEach(assemblyFiles, fileInfo =>
             {
@@ -97,17 +98,17 @@ namespace AsmSpy
                 }
             });
 
-            ProcessResults();
+            return GetResults();
         }
 
-        private void ProcessResults()
+        private IList<AssemblyResult> GetResults()
         {
             if (!_all)
             {
                 _writer.WriteLine("Detailing only conflicting assembly references.");
             }
 
-            foreach (var assembly in _assemblies.OrderBy(x => x.Key))
+            foreach (var assembly in _assemblies)
             {
                 if (_skipSystem && (assembly.Key.StartsWith("System") || assembly.Key.StartsWith("mscorlib")))
                     continue;
@@ -126,20 +127,34 @@ namespace AsmSpy
                     }
                 }
 
-                PrintResults(referencedAssemblies, versionsList, assembly.Key);
+                _assemblyResults.Add(new AssemblyResult
+                {
+                    ReferencedAssemblies = referencedAssemblies,
+                    VersionsList = versionsList,
+                    AssemblyName = assembly.Key
+                });
             }
+
+            return _assemblyResults;
         }
 
-        public void PrintResults(IEnumerable<KeyValuePair<string, string>> referencedAssemblies, IList<string> versionsList, string assemblyName)
+        public void PrintResults()
+        {
+            foreach (var assemblyResult in _assemblyResults.OrderBy(x=>x.AssemblyName))
+            {
+                PrintResultsForAssembly(assemblyResult);
+            }
+        }
+        private void PrintResultsForAssembly(AssemblyResult result)
         {
             Console.ForegroundColor = ConsoleColor.White;
             _writer.Write("Reference: ");
             Console.ForegroundColor = ConsoleColor.Gray;
-            _writer.WriteLine("{0}", assemblyName);
+            _writer.WriteLine("{0}", result.AssemblyName);
 
-            foreach(var referencedAssembly in referencedAssemblies)
+            foreach(var referencedAssembly in result.ReferencedAssemblies)
             {
-                var versionColor = ConsoleColors[versionsList.IndexOf(referencedAssembly.Key) % ConsoleColors.Length];
+                var versionColor = ConsoleColors[result.VersionsList.IndexOf(referencedAssembly.Key) % ConsoleColors.Length];
 
                 Console.ForegroundColor = versionColor;
                 _writer.Write("   {0}", referencedAssembly.Key);
