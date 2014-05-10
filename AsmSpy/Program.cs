@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Reflection;
 using CommandLine;
 
 namespace AsmSpy
@@ -26,18 +25,6 @@ namespace AsmSpy
 
             var spy = new Spy(options);
             spy.Analyse();
-        }
-    }
-
-    public class ReferencedAssembly
-    {
-        public Version VersionReferenced { get; private set; }
-        public Assembly ReferencedBy { get; private set; }
-
-        public ReferencedAssembly(Version versionReferenced, Assembly referencedBy)
-        {
-            VersionReferenced = versionReferenced;
-            ReferencedBy = referencedBy;
         }
     }
 }
