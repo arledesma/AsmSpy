@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using CommandLine;
 
 namespace AsmSpy
 {
@@ -19,40 +22,56 @@ namespace AsmSpy
             };
         static void Main(string[] args)
         {
-            if (args.Length > 3 || args.Length < 1)
+            var parser = new Parser(x =>
             {
-                PrintUsage();
-                return;
+                x.HelpWriter = Console.Error;
+                x.CaseSensitive = false;
+                x.IgnoreUnknownArguments = false;
+                x.MutuallyExclusive = false;
+                x.ParsingCulture = CultureInfo.CurrentCulture;
+            });
+
+            var options = new Options();
+            if (!parser.ParseArguments(args, options))
+            {
+                Environment.Exit(Parser.DefaultExitCodeFail);
             }
 
-            var directoryPath = args[0];
-            if (!Directory.Exists(directoryPath))
-            {
-                PrintDirectoryNotFound(directoryPath);
-                return;
-            }
-
-
-            var onlyConflicts = !args.Skip(1).Any(x => x.Equals("all", StringComparison.OrdinalIgnoreCase));  // args.Length != 2 || (args[1] != "all");
-            var skipSystem = args.Skip(1).Any(x => x.Equals("nonsystem", StringComparison.OrdinalIgnoreCase));
-
-            AnalyseAssemblies(new DirectoryInfo(directoryPath), onlyConflicts, skipSystem);
+            var directoryInfo = GetDirectoryInfo(options.Path);
+            var assemblyFiles = GetFiles(directoryInfo, options.SubDirectories);
+            AnalyseAssemblies(assemblyFiles, options);
         }
 
-        public static void AnalyseAssemblies(DirectoryInfo directoryInfo, bool onlyConflicts, bool skipSystem)
+        private static List<FileInfo> GetFiles(DirectoryInfo directoryInfo, bool subDirectories)
         {
-            var assemblyFiles = directoryInfo.GetFilesByExtensions(SearchOption.TopDirectoryOnly, "*.dll", "*.exe").ToList();
-            if (!assemblyFiles.Any())
-            {
-                Console.WriteLine("No dll files found in directory: '{0}'",
-                    directoryInfo.FullName);
-                return;
-            }
-
             Console.WriteLine("Check assemblies in:");
             Console.WriteLine(directoryInfo.FullName);
             Console.WriteLine("");
 
+            var option = subDirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+            var assemblyFiles = directoryInfo.GetFilesByExtensions(option, "*.dll", "*.exe")
+                                             .ToList();
+
+            if (assemblyFiles.Any())
+                return assemblyFiles;
+
+            var error = String.Format("No dll files found in directory: '{0}'",
+                directoryInfo.FullName);
+            throw new FileNotFoundException(error, directoryInfo.FullName);
+        }
+
+        private static DirectoryInfo GetDirectoryInfo(string path)
+        {
+            if (Directory.Exists(path))
+                return new DirectoryInfo(path);
+
+            PrintDirectoryNotFound(path);
+            throw new FileNotFoundException();
+        }
+
+        public static void AnalyseAssemblies(List<FileInfo> assemblyFiles, Options options)
+        {
             var assemblies = new Dictionary<string, IList<ReferencedAssembly>>();
             foreach (var fileInfo in assemblyFiles.OrderBy(asm => asm.Name))
             {
@@ -78,15 +97,15 @@ namespace AsmSpy
                 }
             }
 
-            if (onlyConflicts)
+            if (options.OnlyConflicts)
                 Console.WriteLine("Detailing only conflicting assembly references.");
 
             foreach (var assembly in assemblies)
             {
-                if (skipSystem && (assembly.Key.StartsWith("System") || assembly.Key.StartsWith("mscorlib"))) continue;
+                if (options.SkipSystem && (assembly.Key.StartsWith("System") || assembly.Key.StartsWith("mscorlib"))) continue;
                 
-                if (!onlyConflicts
-                    || (onlyConflicts && assembly.Value.GroupBy(x => x.VersionReferenced).Count() != 1))
+                if (!options.OnlyConflicts
+                    || (options.OnlyConflicts && assembly.Value.GroupBy(x => x.VersionReferenced).Count() != 1))
                 {
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.Write("Reference: ");
@@ -133,20 +152,14 @@ namespace AsmSpy
                     Console.WriteLine();
                 }
             }
+
+            if (Debugger.IsAttached)
+                Debugger.Break();
         }
 
         private static void PrintDirectoryNotFound(string directoryPath)
         {
             Console.WriteLine("Directory: '" + directoryPath + "' does not exist.");
-        }
-
-        private static void PrintUsage()
-        {
-            Console.WriteLine("Usage:");
-            Console.WriteLine("AsmSpy <directory to load assemblies from> [all]");
-            Console.WriteLine("E.g.");
-            Console.WriteLine(@"AsmSpy C:\Source\My.Solution\My.Project\bin\Debug");
-            Console.WriteLine(@"AsmSpy C:\Source\My.Solution\My.Project\bin\Debug all");
         }
     }
 
