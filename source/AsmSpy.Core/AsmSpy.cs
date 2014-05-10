@@ -170,6 +170,14 @@ namespace AsmSpy
                 PrintResultsForAssembly(assemblyResult);
             }
         }
+
+        public void PrintResults(IList<AssemblyResult> results)
+        {
+            foreach(var assemblyResult in results)
+            {
+                PrintResultsForAssembly(assemblyResult);
+            }
+        }
         private void PrintResultsForAssembly(AssemblyResult result)
         {
             Console.ForegroundColor = ConsoleColor.White;
