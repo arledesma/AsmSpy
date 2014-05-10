@@ -62,7 +62,7 @@ namespace AsmSpy
         public IList<AssemblyResult> Analyse()
         {
             if(String.IsNullOrWhiteSpace(_path))
-                throw new ArgumentOutOfRangeException(_path, "Must instantiate with path in order to call Analyse()");
+                throw new ArgumentOutOfRangeException("_path", "Must instantiate with path in order to call Analyse()");
 
             var directoryInfo = GetDirectoryInfo();
             var assemblyFiles = GetFiles(directoryInfo);
