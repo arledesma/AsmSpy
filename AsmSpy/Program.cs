@@ -115,7 +115,6 @@ namespace AsmSpy
                 Console.WriteLine("{0}", assembly.Key);
 
                 var versionsList = new List<string>();
-                var asmList = new List<string>();
                 var referencedAssemblies = assembly.Value.Select(GetReferencedAssemblyPair).ToList();
 
                 foreach (var referencedAssembly in referencedAssemblies)
@@ -123,10 +122,6 @@ namespace AsmSpy
                     if (!versionsList.Contains(referencedAssembly.Key))
                     {
                         versionsList.Add(referencedAssembly.Key);
-                    }
-                    if (!asmList.Contains(referencedAssembly.Key))
-                    {
-                        asmList.Add(referencedAssembly.Key);
                     }
                 }
 
