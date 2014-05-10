@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using CommandLine;
 
@@ -9,8 +10,11 @@ namespace AsmSpy
         static void Main(string[] args)
         {
             var options = GetOptions(args);
-            var spy = new Spy(options);
+            var spy = new AsmSpy(options.All, options.Path, options.SkipSystem, options.SubDirectories, Console.Out);
             spy.Analyse();
+
+            if(Debugger.IsAttached)
+                Debugger.Break();
         }
 
         private static Options GetOptions(string[] args)

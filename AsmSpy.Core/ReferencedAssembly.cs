@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace AsmSpy
+namespace AsmSpy.Core
 {
     internal class ReferencedAssembly
     {
