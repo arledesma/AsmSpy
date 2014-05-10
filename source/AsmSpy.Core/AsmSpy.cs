@@ -135,10 +135,10 @@ namespace AsmSpy
 
             foreach (var assembly in _assemblies)
             {
-                if (_skipSystem && (assembly.Key.StartsWith("System") || assembly.Key.StartsWith("mscorlib")))
+                if (CanSkipSystem(assembly))
                     continue;
 
-                if (!_all && (assembly.Value.GroupBy(x => x.VersionReferenced).Count() == 1))
+                if (CanSkipNonConflicts(assembly))
                     continue;
 
                 var versionsList = new List<string>();
@@ -161,6 +161,16 @@ namespace AsmSpy
             }
 
             return _assemblyResults;
+        }
+
+        private bool CanSkipNonConflicts(KeyValuePair<string, IList<ReferencedAssembly>> assembly)
+        {
+            return !_all && (assembly.Value.GroupBy(x => x.VersionReferenced).Count() == 1);
+        }
+
+        private bool CanSkipSystem(KeyValuePair<string, IList<ReferencedAssembly>> assembly)
+        {
+            return _skipSystem && (assembly.Key.StartsWith("System") || assembly.Key.StartsWith("mscorlib"));
         }
 
         public void PrintResults()
