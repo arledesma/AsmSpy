@@ -8,6 +8,13 @@ namespace AsmSpy
     {
         static void Main(string[] args)
         {
+            var options = GetOptions(args);
+            var spy = new Spy(options);
+            spy.Analyse();
+        }
+
+        private static Options GetOptions(string[] args)
+        {
             var parser = new Parser(x =>
             {
                 x.HelpWriter = Console.Error;
@@ -23,8 +30,7 @@ namespace AsmSpy
                 Environment.Exit(Parser.DefaultExitCodeFail);
             }
 
-            var spy = new Spy(options);
-            spy.Analyse();
+            return options;
         }
     }
 }
