@@ -21,7 +21,7 @@ namespace AsmSpy
         {
             var directoryInfo = GetDirectoryInfo(_options.Path);
             var assemblyFiles = GetFiles(directoryInfo, _options.SubDirectories);
-            AnalyseAssemblies(assemblyFiles, _options.SkipSystem, _options.OnlyConflicts);
+            AnalyseAssemblies(assemblyFiles, _options.SkipSystem, _options.All);
         }
 
         private static List<FileInfo> GetFiles(DirectoryInfo directoryInfo, bool subDirectories)
@@ -52,7 +52,7 @@ namespace AsmSpy
             throw new FileNotFoundException();
         }
 
-        public static void AnalyseAssemblies(List<FileInfo> assemblyFiles, bool skipSystem, bool onlyConflicts)
+        public static void AnalyseAssemblies(List<FileInfo> assemblyFiles, bool skipSystem, bool all)
         {
             var assemblies = new ConcurrentDictionary<string, IList<ReferencedAssembly>>();
             Parallel.ForEach(assemblyFiles, fileInfo =>
@@ -79,7 +79,7 @@ namespace AsmSpy
                 }
             });
 
-            if(onlyConflicts)
+            if(!all)
                 Console.WriteLine("Detailing only conflicting assembly references.");
 
             foreach(var assembly in assemblies.OrderBy(x => x.Key))
@@ -87,7 +87,7 @@ namespace AsmSpy
                 if(skipSystem && (assembly.Key.StartsWith("System") || assembly.Key.StartsWith("mscorlib")))
                     continue;
 
-                if(onlyConflicts && (!onlyConflicts || assembly.Value.GroupBy(x => x.VersionReferenced).Count() == 1))
+                if(!all && (assembly.Value.GroupBy(x => x.VersionReferenced).Count() == 1))
                     continue;
 
                 var versionsList = new List<string>();

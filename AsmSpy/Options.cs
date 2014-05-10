@@ -9,8 +9,8 @@ namespace AsmSpy
         [Option('p', HelpText = "Directory to scan.", Required = true)]
         public String Path { get; set; }
 
-        [Option('c', DefaultValue = false, HelpText = "Only includes files with conflicts.", Required = false)]
-        public bool OnlyConflicts { get; set; }
+        [Option('a', DefaultValue = false, HelpText = "Includes all files with conflicts.", Required = false)]
+        public bool All { get; set; }
 
         [Option('s', DefaultValue = false, HelpText = "Do not include system files with conflicts.", Required = false)]
         public bool SkipSystem { get; set; }
