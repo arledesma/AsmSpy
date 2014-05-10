@@ -41,7 +41,7 @@ namespace AsmSpy
 
         public static void AnalyseAssemblies(DirectoryInfo directoryInfo, bool onlyConflicts, bool skipSystem)
         {
-            var assemblyFiles = directoryInfo.GetFiles("*.dll").Concat(directoryInfo.GetFiles("*.exe"));
+            var assemblyFiles = directoryInfo.GetFilesByExtensions(SearchOption.TopDirectoryOnly, "*.dll", "*.exe").ToList();
             if (!assemblyFiles.Any())
             {
                 Console.WriteLine("No dll files found in directory: '{0}'",
