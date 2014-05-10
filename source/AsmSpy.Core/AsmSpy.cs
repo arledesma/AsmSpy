@@ -19,6 +19,28 @@ namespace AsmSpy
         private readonly IList<AssemblyResult> _assemblyResults = new List<AssemblyResult>();
         private readonly TextWriter _writer;
 
+        public AsmSpy()
+        {
+            _writer = TextWriter.Null;
+        }
+
+        public AsmSpy(TextWriter writer)
+        {
+            _writer = writer;
+        }
+
+        public AsmSpy(string path)
+        {
+            _path = path;
+            _writer = TextWriter.Null;
+        }
+
+        public AsmSpy(string path, TextWriter writer)
+        {
+            _path = path;
+            _writer = writer;
+        }
+
         public AsmSpy(bool all, string path, bool skipSystem, bool subDirectories)
         {
             _all = all;
@@ -39,6 +61,9 @@ namespace AsmSpy
 
         public IList<AssemblyResult> Analyse()
         {
+            if(String.IsNullOrWhiteSpace(_path))
+                throw new ArgumentOutOfRangeException(_path, "Must instantiate with path in order to call Analyse()");
+
             var directoryInfo = GetDirectoryInfo();
             var assemblyFiles = GetFiles(directoryInfo);
             return AnalyseAssemblies(assemblyFiles);
