@@ -109,11 +109,6 @@ namespace AsmSpy
                 if (options.OnlyConflicts && (!options.OnlyConflicts || assembly.Value.GroupBy(x => x.VersionReferenced).Count() == 1))
                     continue;
 
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("Reference: ");
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.WriteLine("{0}", assembly.Key);
-
                 var versionsList = new List<string>();
                 var referencedAssemblies = assembly.Value.Select(GetReferencedAssemblyPair).ToList();
 
@@ -125,25 +120,35 @@ namespace AsmSpy
                     }
                 }
 
-                foreach (var referencedAssembly in referencedAssemblies)
-                {
-                    var versionColor = ConsoleColors[versionsList.IndexOf(referencedAssembly.Key)%ConsoleColors.Length];
-
-                    Console.ForegroundColor = versionColor;
-                    Console.Write("   {0}", referencedAssembly.Key);
-                        
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write(" by ");
-                        
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    Console.WriteLine("{0}", referencedAssembly.Value);
-                }
-
-                Console.WriteLine();
+                PrintResults(referencedAssemblies, versionsList, assembly.Key);
             }
 
             if (Debugger.IsAttached)
                 Debugger.Break();
+        }
+
+        private static void PrintResults(IEnumerable<KeyValuePair<string, string>> referencedAssemblies, IList<string> versionsList, string assemblyName)
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("Reference: ");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("{0}", assemblyName);
+
+            foreach (var referencedAssembly in referencedAssemblies)
+            {
+                var versionColor = ConsoleColors[versionsList.IndexOf(referencedAssembly.Key)%ConsoleColors.Length];
+
+                Console.ForegroundColor = versionColor;
+                Console.Write("   {0}", referencedAssembly.Key);
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(" by ");
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("{0}", referencedAssembly.Value);
+            }
+
+            Console.WriteLine();
         }
 
         private static KeyValuePair<string, string> GetReferencedAssemblyPair(ReferencedAssembly assembly)
